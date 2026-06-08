@@ -1,0 +1,9 @@
+{
+	"prettier.useEditorConfig": false,
+	"[javascript]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"files.associations": {
+		"*.svg": "html"
+	}
+}
