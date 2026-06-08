@@ -1,17 +1,168 @@
+
 <!doctype html>
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-
-		<link rel="icon" href="/assets/favicon.png" />
-		<link rel="shortcut icon" href="/assets/favicon.png" />
-
-		<link rel="icon" type="image/svg+xml" href="/vite.svg" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>p5Catalyst</title>
-	</head>
-	<body>
-		<script type="module" src="src/main.js"></script>
-		<main></main>
-	</body>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>培训机构海报生成器</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, "Microsoft YaHei", sans-serif; background: #eef3f8; color: #172033; }
+    .app { display: grid; grid-template-columns: 390px 1fr; min-height: 100vh; }
+    .panel { background: #fff; border-right: 1px solid #d9e0ec; padding: 24px; overflow: auto; }
+    .brand { display: flex; gap: 10px; align-items: center; }
+    .mark { width: 34px; height: 34px; border-radius: 8px; background: linear-gradient(135deg, #2458ff, #61d8ff); }
+    h1 { font-size: 22px; margin: 0; }
+    .hint { color: #647089; font-size: 14px; line-height: 1.7; }
+    .group { border-top: 1px solid #d9e0ec; margin-top: 18px; padding-top: 18px; }
+    .group-title { font-weight: 800; margin: 0 0 12px; }
+    label { display: block; font-size: 13px; font-weight: 800; color: #39445a; margin: 12px 0 6px; }
+    input, textarea, select { width: 100%; border: 1px solid #c9d3e5; border-radius: 8px; padding: 11px 12px; font: inherit; }
+    textarea { min-height: 76px; resize: vertical; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .palette { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .swatch { height: 42px; border: 2px solid transparent; border-radius: 8px; cursor: pointer; }
+    .swatch.active { border-color: #111827; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+    button { border: 0; border-radius: 8px; padding: 12px 14px; font-weight: 800; cursor: pointer; }
+    .primary { color: #fff; background: #2458ff; }
+    .secondary { background: #e8edf6; }
+    .stage { display: grid; place-items: center; padding: 28px; background: linear-gradient(rgba(23,32,51,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(23,32,51,.04) 1px, transparent 1px), #eef3f8; background-size: 28px 28px; }
+    .phone-frame { width: min(420px, 86vw); aspect-ratio: 9 / 16; padding: 14px; border-radius: 24px; background: #172033; box-shadow: 0 24px 70px rgba(23,32,51,.28); }
+    #posterSvg { display: block; width: 100%; height: 100%; border-radius: 16px; background: #fff; }
+    .note { margin-top: 14px; color: #647089; font-size: 13px; text-align: center; }
+    @media (max-width: 860px) { .app { grid-template-columns: 1fr; } .panel { border-right: 0; border-bottom: 1px solid #d9e0ec; } .stage { padding: 22px 12px 34px; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="panel">
+      <div class="brand">
+        <div class="mark"></div>
+        <div>
+          <h1>培训机构海报生成器</h1>
+          <p class="hint">填上课程信息，右边会自动生成一张适合朋友圈、小红书、家长群转发的招生海报。</p>
+        </div>
+      </div>
+      <div class="group">
+        <p class="group-title">基础信息</p>
+        <label>机构名称</label><input id="school" value="星辰成长学院">
+        <label>课程标题</label><input id="course" value="暑期少儿编程体验营">
+        <label>一句话卖点</label><textarea id="subtitle">从零开始做小游戏，培养逻辑思维、创造力和表达能力。</textarea>
+        <div class="row">
+          <div><label>适合年龄</label><input id="age" value="7-12岁"></div>
+          <div><label>开课时间</label><input id="date" value="7月15日开营"></div>
+        </div>
+        <label>优惠/活动</label><input id="offer" value="前30名报名立减300元">
+        <label>咨询方式</label><input id="phone" value="扫码咨询 / 138-0000-8888">
+      </div>
+      <div class="group">
+        <p class="group-title">风格</p>
+        <div class="palette" id="palette">
+          <button class="swatch active" data-theme="blue" style="background:linear-gradient(135deg,#2458ff,#62d8ff)"></button>
+          <button class="swatch" data-theme="orange" style="background:linear-gradient(135deg,#ff7a1a,#ffe066)"></button>
+          <button class="swatch" data-theme="green" style="background:linear-gradient(135deg,#18a46b,#b6f36a)"></button>
+          <button class="swatch" data-theme="purple" style="background:linear-gradient(135deg,#7c3cff,#ff6ab3)"></button>
+        </div>
+        <label>角标文案</label>
+        <select id="badge">
+          <option>限时招生</option>
+          <option>免费试听</option>
+          <option>周末班开放</option>
+          <option>寒暑假热门课</option>
+        </select>
+      </div>
+      <div class="actions">
+        <button class="secondary" id="randomBtn">随机文案</button>
+        <button class="primary" id="downloadBtn">导出 PNG</button>
+      </div>
+    </aside>
+    <main class="stage">
+      <div>
+        <div class="phone-frame">
+          <svg id="posterSvg" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+        <div class="note">右边是实时预览。点“导出 PNG”可以下载图片。</div>
+      </div>
+    </main>
+  </div>
+  <script type="module">
+    const themes = {
+      blue: { a: '#2458ff', b: '#62d8ff', c: '#fff45c', dark: '#14234f' },
+      orange: { a: '#ff7a1a', b: '#ffe066', c: '#2458ff', dark: '#48240d' },
+      green: { a: '#18a46b', b: '#b6f36a', c: '#2458ff', dark: '#103f31' },
+      purple: { a: '#7c3cff', b: '#ff6ab3', c: '#fff45c', dark: '#29124f' }
+    };
+    const examples = [
+      ['暑期少儿编程体验营', '从零开始做小游戏，培养逻辑思维、创造力和表达能力。', '7-12岁', '7月15日开营', '前30名报名立减300元'],
+      ['中考英语冲刺班', '词汇、语法、阅读、写作四线提升，帮孩子稳住关键分。', '初二-初三', '每周六开课', '报名赠送一次测评'],
+      ['硬笔书法提升课', '改善坐姿、握笔、控笔和卷面，让孩子写字更清楚更自信。', '6-14岁', '周末小班制', '免费领取试听名额'],
+      ['AI绘画创意课', '用简单提示词做海报、头像和故事场景，打开孩子的表达力。', '8-15岁', '暑假班招生中', '两人同行各减100元']
+    ];
+    let currentTheme = 'blue';
+    const ids = ['school', 'course', 'subtitle', 'age', 'date', 'offer', 'phone', 'badge'];
+    const el = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
+    const svg = document.getElementById('posterSvg');
+    function wrapText(text, max = 15) {
+      const clean = String(text || '').trim();
+      const chunks = [];
+      for (let i = 0; i < clean.length; i += max) chunks.push(clean.slice(i, i + max));
+      return chunks.slice(0, 4);
+    }
+    function esc(value) {
+      return String(value).replace(/[&<>]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[char]));
+    }
+    function render() {
+      const t = themes[currentTheme];
+      const titleLines = wrapText(el.course.value, 8);
+      const subLines = wrapText(el.subtitle.value, 18);
+      svg.innerHTML = `
+        <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${t.a}"/><stop offset=".62" stop-color="${t.b}"/><stop offset="1" stop-color="#fff"/></linearGradient><filter id="shadow"><feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000" flood-opacity=".18"/></filter></defs>
+        <rect width="1080" height="1920" fill="url(#bg)"/><circle cx="920" cy="160" r="190" fill="#fff" opacity=".24"/><circle cx="120" cy="560" r="260" fill="#fff" opacity=".16"/>
+        <path d="M0 1460 C260 1320 460 1530 720 1410 C910 1320 1010 1240 1080 1280 L1080 1920 L0 1920 Z" fill="#fff" opacity=".92"/>
+        <g transform="translate(84 92)"><rect width="310" height="70" rx="35" fill="${t.dark}" opacity=".92"/><text x="36" y="46" font-size="30" font-weight="800" fill="#fff">${esc(el.badge.value)}</text></g>
+        <text x="84" y="265" font-size="40" font-weight="800" fill="${t.dark}" opacity=".86">${esc(el.school.value)}</text>
+        <g transform="translate(84 390)">${titleLines.map((line, i) => `<text x="0" y="${i * 116}" font-size="92" font-weight="900" fill="${t.dark}">${esc(line)}</text>`).join('')}</g>
+        <g transform="translate(84 760)">${subLines.map((line, i) => `<text x="0" y="${i * 56}" font-size="38" font-weight="700" fill="${t.dark}" opacity=".82">${esc(line)}</text>`).join('')}</g>
+        <g filter="url(#shadow)"><rect x="84" y="1036" width="912" height="230" rx="34" fill="#fff" opacity=".94"/><text x="132" y="1120" font-size="34" font-weight="800" fill="#647089">适合年龄</text><text x="132" y="1192" font-size="48" font-weight="900" fill="${t.dark}">${esc(el.age.value)}</text><line x1="540" y1="1082" x2="540" y2="1224" stroke="#d9e0ec" stroke-width="4"/><text x="590" y="1120" font-size="34" font-weight="800" fill="#647089">开课时间</text><text x="590" y="1192" font-size="48" font-weight="900" fill="${t.dark}">${esc(el.date.value)}</text></g>
+        <g transform="translate(84 1348)"><rect width="912" height="170" rx="30" fill="${t.c}"/><text x="48" y="68" font-size="34" font-weight="800" fill="${t.dark}">招生福利</text><text x="48" y="122" font-size="44" font-weight="900" fill="${t.dark}">${esc(el.offer.value)}</text></g>
+        <g transform="translate(84 1608)"><rect width="210" height="210" rx="20" fill="#fff"/><rect x="28" y="28" width="52" height="52" fill="${t.dark}"/><rect x="130" y="28" width="52" height="52" fill="${t.dark}"/><rect x="28" y="130" width="52" height="52" fill="${t.dark}"/><rect x="96" y="96" width="34" height="34" fill="${t.dark}"/><rect x="148" y="128" width="28" height="28" fill="${t.dark}"/><text x="250" y="70" font-size="36" font-weight="800" fill="${t.dark}">立即预约试听</text><text x="250" y="132" font-size="34" font-weight="700" fill="#647089">${esc(el.phone.value)}</text><text x="250" y="188" font-size="28" font-weight="700" fill="#647089">把这张海报发给家长，配合二维码使用效果更好</text></g>`;
+    }
+    function randomCopy() {
+      const item = examples[Math.floor(Math.random() * examples.length)];
+      [el.course.value, el.subtitle.value, el.age.value, el.date.value, el.offer.value] = item;
+      render();
+    }
+    function downloadPng() {
+      const data = new XMLSerializer().serializeToString(svg);
+      const blob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1080; canvas.height = 1920;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 1080, 1920); ctx.drawImage(img, 0, 0);
+        URL.revokeObjectURL(url);
+        const a = document.createElement('a');
+        a.download = 'training-poster.png';
+        a.href = canvas.toDataURL('image/png');
+        a.click();
+      };
+      img.src = url;
+    }
+    ids.forEach(id => el[id].addEventListener('input', render));
+    document.getElementById('randomBtn').addEventListener('click', randomCopy);
+    document.getElementById('downloadBtn').addEventListener('click', downloadPng);
+    document.getElementById('palette').addEventListener('click', event => {
+      const button = event.target.closest('.swatch');
+      if (!button) return;
+      currentTheme = button.dataset.theme;
+      document.querySelectorAll('.swatch').forEach(item => item.classList.remove('active'));
+      button.classList.add('active');
+      render();
+    });
+    render();
+  </script>
+</body>
 </html>
